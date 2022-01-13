@@ -11,18 +11,33 @@ class ScoreEngine:
         else:
             self.base_data = base_data.to_dict(orient='index')
 
-    def score_polygenic_risk(self, target_dict:dict) -> float:
-        
-        target = list(target_dict.items())
+    def score_polygenic_risk(self, pairs, **kwargs) -> float:
+        """ Takes in list/tuple/generator of rsid, allele pairs and returns
+            the polygenic risk score using the user-inputted base data. """
+
         prs_cum = 0
 
-        for index in tqdm(range(len(target_dict))):
-            rsid, alleles = target[index]
-            prs_cum += self.score_snp(rsid, alleles)
+        if 'generator_count' in kwargs:
+            count = kwargs['generator_count']
 
-        return prs_cum
+            for i in tqdm(range(count)):
+                rsid, allele = next(pairs)
+                prs_cum += self.score_snp(rsid, allele)
+
+            return prs_cum
+
+        try:
+            for i in tqdm(range(len(pairs))):
+                rsid, allele = pairs[i]
+                prs_cum += self.score_snp(rsid, allele)
+            
+            return prs_cum
+        except TypeError:
+            raise Exception("If inputting a generator, must use additional keyword argument 'generator_count'.\nAssign # of pairs present in generator.")
 
     def score_snp(self, target_rsid:str, target_alleles:str, **kwargs) -> float:
+        """ Takes in a target rsid and target alleles and returns the risk score 
+            of the SNP given the user-inputted base data. """
 
         alleles = list(target_alleles)
         alleles_str = ''.join(sorted(alleles))
@@ -48,7 +63,7 @@ class ScoreEngine:
                 alleles_str = ''.join(alleles)
                 reversed = True
         except KeyError:
-            raise('SNP not in base data')
+            raise Exception(f'{target_rsid} not in base data')
 
         """ Calculates risk score for the inputted allele. """
         odds_ratio = base_snp_dict['OR']
