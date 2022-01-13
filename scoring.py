@@ -6,7 +6,10 @@ class ScoreEngine:
     SNP_COMPLEMENTS = {'A':'T', 'C':'G', 'G':'C', 'T':'A'}
 
     def __init__(self, base_data) -> None:
-        self.base_data = base_data
+        if isinstance(base_data, dict):
+            self.base_data = base_data
+        else:
+            self.base_data = base_data.to_dict(orient='index')
 
     def score_polygenic_risk(self, target_dict:dict) -> float:
         
